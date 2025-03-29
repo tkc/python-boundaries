@@ -1,164 +1,191 @@
-# Python Architecture Boundaries
+# Python Architecture Boundaries Checker 🛡️
 
-このGitHub Actionは、Pythonプロジェクトのアーキテクチャ境界を強制するためのツールです。レイヤードアーキテクチャやクリーンアーキテクチャなど、層状の依存関係ルールを持つプロジェクトで特に役立ちます。
+[![CI Checks](https://github.com/tkc/python-boundaries/actions/workflows/lint_type_checks.yml/badge.svg)](https://github.com/tkc/python-boundaries/actions/workflows/lint_type_checks.yml)
+[![Boundary Checks](https://github.com/tkc/python-boundaries/actions/workflows/boundary_checks.yml/badge.svg)](https://github.com/tkc/python-boundaries/actions/workflows/boundary_checks.yml)
 
-## 特徴
+Keep your Python project's architecture clean and maintainable! ✨ This GitHub Action helps enforce architectural boundaries, ensuring your layers (like in Clean Architecture or DDD) stay decoupled and dependencies flow in the right direction.
 
-- アーキテクチャ要素（層）とそれらの間の依存関係ルールを定義できます
-- カスタム設定ファイルをサポート（YAML, TOML）
-- GitHub Actionsの注釈機能による分かりやすいエラー表示
-- どのリポジトリからでも直接使用可能
+## Features 🚀
 
-## 使い方
+- **Define Your Architecture:** Clearly define architectural elements (layers) using simple regex patterns.
+- **Enforce Dependency Rules:** Set clear rules (allow/disallow) for how elements can interact.
+- **Flexible Configuration:** Use YAML or TOML for configuration (`.boundaries.yml`, `.boundaries.toml`, `ruff.toml`, or `pyproject.toml`).
+- **Clear Feedback:** Get easy-to-understand violation reports directly in your PRs via GitHub Actions annotations. 📝
+- **Easy Integration:** Use it as a GitHub Action in any Python repository. Plug and play! 🔌
 
-### 基本的な使用方法
+## Usage Guide 📖
+
+### Basic Setup
+
+Get started quickly by adding this step to your workflow:
 
 ```yaml
 name: Python Checks
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
-    branches: [ main ]
+    branches: [main]
 
 jobs:
   architecture-check:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
-    
-    - name: Check architecture boundaries
-      uses: tkc/python-boundaries@v1
+      - uses: actions/checkout@v3
+
+      - name: Check Architecture Boundaries 🏰
+        uses: tkc/python-boundaries@v1 # Make sure to use the correct action path
 ```
 
-### カスタム設定ファイルの使用
+### Custom Configuration ⚙️
 
-プロジェクトのルートに `.boundaries.yml` ファイルを作成:
+Tailor the rules to your project's specific needs. Create a configuration file (e.g., `.boundaries.yml`) in your project root:
 
 ```yaml
+# .boundaries.yml
 elements:
   - type: "domain"
-    pattern: "src/domain/.*\\.py$"
+    pattern: 'src/domain/.*\.py$' # Regex to identify domain files
   - type: "application"
-    pattern: "src/application/.*\\.py$"
+    pattern: 'src/application/.*\.py$'
   - type: "infrastructure"
-    pattern: "src/infrastructure/.*\\.py$"
+    pattern: 'src/infrastructure/.*\.py$'
   - type: "presentation"
-    pattern: "src/presentation/.*\\.py$"
+    pattern: 'src/presentation/.*\.py$'
 
 rules:
-  default: "disallow"
+  default: "disallow" # Disallow dependencies by default (safer!)
   specific:
+    # Define allowed dependencies
     - from: "presentation"
-      allow: ["application", "domain"]
+      allow: ["application", "domain"] # Presentation can use Application & Domain
     - from: "application"
-      allow: ["domain"]
+      allow: ["domain"] # Application can use Domain
     - from: "infrastructure"
-      allow: ["domain", "application"]
+      allow: ["domain", "application"] # Infrastructure can use Domain & Application
 ```
 
-### PRでエラーを表示するが失敗させない
+The action automatically finds and uses your config file!
+
+### Non-Blocking Checks (Report Only) 🚦
+
+Want to see violations without failing the build? Use `fail-on-error: false`:
 
 ```yaml
-- name: Check architecture boundaries
+- name: Check Architecture (Report Only)
   uses: tkc/python-boundaries@v1
   with:
     fail-on-error: false
 ```
 
-### 結果に基づいて条件分岐
+### Using Outputs for Conditional Logic 💡
+
+Leverage the action's outputs for more advanced workflows:
 
 ```yaml
-- name: Check architecture boundaries
-  id: boundaries
+- name: Check Architecture Boundaries
+  id: boundaries # Give the step an ID
   uses: tkc/python-boundaries@v1
   with:
-    fail-on-error: false
+    fail-on-error: false # Don't fail the job
 
-- name: Post violation summary
+- name: Summarize Violations (if any)
   if: steps.boundaries.outputs.has-violations == 'true'
   run: |
-    echo "アーキテクチャ境界違反が ${steps.boundaries.outputs.violation-count} 件見つかりました"
+    echo "🚨 Architecture boundary violations found: ${{ steps.boundaries.outputs.violation-count }}"
+    # Maybe post a comment, trigger another action, etc.
 ```
 
-## 設定オプション
+## Configuration Options 🛠️
 
-### elements
+Configure the checker via a file (see below).
 
-アーキテクチャの要素（層）を定義します。各要素には以下のプロパティがあります：
+### `elements`
 
-- `type`: 要素の種類（例: "domain", "application"）
-- `pattern`: ファイルパスを識別するための正規表現パターン
+Define your architectural layers:
 
-### rules
+- `type` (string, required): A unique name (e.g., "domain", "ui").
+- `pattern` (string, required): Regex pattern matching file paths for this element (relative to project root).
 
-依存関係のルールを定義します：
+### `rules`
 
-- `default`: デフォルトの依存関係ポリシー（"allow" または "disallow"）
-- `specific`: 特定の要素間の依存関係ルール
-  - `from`: ソース要素のタイプ
-  - `allow`: 依存を許可する要素のタイプ（リスト）
-  - `disallow`: 依存を禁止する要素のタイプ（リスト）
+Set the dependency rules:
 
-## 設定ファイル
+- `default` (string, optional, "allow" or "disallow"): Default policy. `"disallow"` (recommended) means imports are forbidden unless explicitly allowed. Defaults to `"disallow"`.
+- `specific` (list, optional): Rules for specific `from` elements:
+  - `from` (string, required): The source element type.
+  - `allow` (list of strings, optional): Element types `from` can import.
+  - `disallow` (list of strings, optional): Element types `from` _cannot_ import (overrides `allow` and `default`).
 
-以下の形式の設定ファイルがサポートされています:
+**Note:** Elements can always import from themselves.
 
-- `.boundaries.yml` または `.boundaries.yaml`
-- `.boundaries.toml`
-- `ruff.toml` (boundariesセクション)
-- `pyproject.toml` (tool.ruff.boundariesセクション)
+## Configuration File 📄
 
-## アクションパラメータ
+The action looks for config files in this order:
 
-| 入力 | 説明 | 必須 | デフォルト |
-|------|------|------|----------|
-| path | チェックするパス | いいえ | . |
-| config | カスタム設定ファイルへのパス | いいえ | "" |
-| fail-on-error | 違反が見つかった場合にアクションを失敗させるか | いいえ | true |
+1.  `.boundaries.yml` or `.boundaries.yaml`
+2.  `.boundaries.toml`
+3.  `ruff.toml` (under `[tool.ruff.boundaries]` or `[boundaries]`)
+4.  `pyproject.toml` (under `[tool.ruff.boundaries]` or `[tool.boundaries]`)
 
-## 出力
+Uses a default config if none are found. Specify a custom path with the `config` input.
 
-| 出力 | 説明 |
-|------|------|
-| has-violations | 違反が見つかったかどうか (true/false) |
-| violation-count | 見つかった違反の数 |
+## Action Inputs 📥
 
-## クリーンアーキテクチャの例
+| Input           | Description                                        | Required | Default |
+| --------------- | -------------------------------------------------- | -------- | ------- |
+| `path`          | Path to check (file or directory)                  | No       | `.`     |
+| `config`        | Path to a custom configuration file                | No       | `""`    |
+| `fail-on-error` | Whether the action should fail if violations found | No       | `true`  |
+
+## Action Outputs 📤
+
+| Output            | Description                                        |
+| ----------------- | -------------------------------------------------- |
+| `has-violations`  | Whether any violations were found (`true`/`false`) |
+| `violation-count` | The total number of violations found               |
+
+## Example: Clean Architecture 🧼
 
 ```yaml
 elements:
   - type: "entities"
-    pattern: "src/domain/entities/.*\\.py$"
+    pattern: 'src/domain/entities/.*\.py$'
   - type: "usecases"
-    pattern: "src/domain/usecases/.*\\.py$"
+    pattern: 'src/domain/usecases/.*\.py$'
   - type: "controllers"
-    pattern: "src/adapters/controllers/.*\\.py$"
+    pattern: 'src/adapters/controllers/.*\.py$'
   - type: "presenters"
-    pattern: "src/adapters/presenters/.*\\.py$"
+    pattern: 'src/adapters/presenters/.*\.py$'
   - type: "repositories"
-    pattern: "src/adapters/repositories/.*\\.py$"
-  - type: "frameworks"
-    pattern: "src/frameworks/.*\\.py$"
+    pattern: 'src/adapters/repositories/.*\.py$'
+  - type: "frameworks" # e.g., Web framework, DB drivers
+    pattern: 'src/frameworks/.*\.py$'
 
 rules:
-  default: "disallow"
+  default: "disallow" # Enforce the Dependency Rule strictly
   specific:
+    # Entities depend on nothing 🧘
     - from: "entities"
       allow: []
+    # Use Cases depend only on Entities 📦
     - from: "usecases"
       allow: ["entities"]
-    - from: "controllers" 
+    # Controllers depend on Use Cases (and indirectly Entities) 🎮
+    - from: "controllers"
       allow: ["usecases", "entities"]
+    # Presenters depend only on Entities (for data transformation) 🎨
     - from: "presenters"
       allow: ["entities"]
+    # Repositories depend on Entities 💾
     - from: "repositories"
       allow: ["entities"]
+    # Frameworks depend on outer layers (Adapters) 🌐
     - from: "frameworks"
       allow: ["controllers", "presenters", "repositories"]
 ```
 
-## ライセンス
+## License 📜
 
 MIT
