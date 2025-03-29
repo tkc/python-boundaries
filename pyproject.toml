@@ -13,6 +13,7 @@ homepage = "https://github.com/tkc/python-boundaries"
 repository = "https://github.com/tkc/python-boundaries"
 documentation = "https://github.com/tkc/python-boundaries"
 keywords = ["python", "architecture", "boundaries", "linter", "dependencies", "clean-architecture"]
+package-mode = false # Tell Poetry not to treat this as an installable package
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Programming Language :: Python :: 3",
@@ -38,4 +39,3 @@ select = ["E", "F", "I"]
 ignore = [
     "E501", # Ignore line too long for now
 ]
-
