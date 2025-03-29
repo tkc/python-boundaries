@@ -2,10 +2,10 @@
 python-boundariesの結合テスト
 """
 import os
+import subprocess
 import sys
 import tempfile
 import unittest
-import subprocess
 from pathlib import Path
 
 # モジュールのインポートパスを設定

@@ -2,15 +2,15 @@
 """
 GitHub Actions用アーキテクチャ境界チェックスクリプト
 """
-import os
-import sys
-import re
-import ast
-import json
 import argparse
+import ast
 import importlib.util
+import os
+import re
+import sys
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple, Any, Set
+from typing import Any, Dict, List, Optional, Tuple
+
 
 # 依存ライブラリを動的に確認・インポート
 def import_optional_dependency(name):
@@ -278,7 +278,7 @@ def main():
         # 設定を読み込む
         config = load_config(repo_parent, config_path)
         
-        print(f"設定を読み込みました:")
+        print("設定を読み込みました:")
         print(f"  要素数: {len(config.get('elements', []))}")
         print(f"  デフォルトルール: {config.get('rules', {}).get('default', 'disallow')}")
         
