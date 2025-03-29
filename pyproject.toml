@@ -1,0 +1,41 @@
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry]
+name = "python-boundaries"
+version = "0.1.0"
+description = "A tool for enforcing architectural boundaries in Python projects"
+authors = ["tkc <ena.tkc@gmail.com>"]
+license = "MIT"
+readme = "README.md"
+homepage = "https://github.com/tkc/python-boundaries"
+repository = "https://github.com/tkc/python-boundaries"
+documentation = "https://github.com/tkc/python-boundaries"
+keywords = ["python", "architecture", "boundaries", "linter", "dependencies", "clean-architecture"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "License :: OSI Approved :: MIT License",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Software Development :: Quality Assurance",
+]
+
+[tool.poetry.dependencies]
+python = ">=3.11"
+pyyaml = ">=6.0"
+tomli = ">=2.0.0"
+
+[tool.poetry.group.dev.dependencies]
+pyright = "^1.1.358"
+pytest = "^8.1.1"
+ruff = ">=0.0.260"
+
+[tool.ruff.lint]
+select = ["E", "F", "I"]
+ignore = [
+    "E501", # Ignore line too long for now
+]
+

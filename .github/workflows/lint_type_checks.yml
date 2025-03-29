@@ -1,0 +1,34 @@
+name: Lint and Type Checks
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+
+      - name: Install Poetry
+        run: |
+          pip install poetry
+
+      - name: Install dependencies with Poetry
+        run: poetry install
+
+      - name: Run Ruff check
+        run: poetry run ruff check .
+
+      - name: Run Pyright check
+        run: poetry run pyright
+
+      - name: Run Pytest check
+        run: poetry run pytest

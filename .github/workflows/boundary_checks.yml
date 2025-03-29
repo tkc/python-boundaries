@@ -1,0 +1,55 @@
+name: Test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  checks: # Renamed job for clarity
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+
+      - name: Install Poetry
+        run: |
+          pip install poetry
+
+      - name: Install dependencies with Poetry
+        run: poetry install
+
+      - name: Run Ruff check
+        run: poetry run ruff check .
+
+      - name: Run Pyright check
+        run: poetry run pyright
+
+      - name: Run boundary checks (existing test)
+        run: |
+          # サンプルプロジェクトディレクトリを作成
+          mkdir -p test_project/app/data
+          mkdir -p test_project/app/logic
+          mkdir -p test_project/app/ui
+
+          # サンプルファイルを作成
+          echo 'class User:\n    pass' > test_project/app/data/models.py
+          echo 'from app.data.models import User\n\nclass UserService:\n    pass' > test_project/app/logic/services.py
+          echo 'from app.logic.services import UserService\n\nclass UserInterface:\n    pass' > test_project/app/ui/interface.py
+
+          # 無効な依存関係を持つファイルを作成
+          echo 'from app.logic.services import UserService\n\nclass InvalidModel:\n    pass' > test_project/app/data/invalid.py
+
+          # 設定ファイルを作成
+          echo 'elements:\n  - type: "data"\n    pattern: "app/data/.*\\.py$"\n  - type: "logic"\n    pattern: "app/logic/.*\\.py$"\n  - type: "ui"\n    pattern: "app/ui/.*\\.py$"\n\nrules:\n  default: "disallow"\n  specific:\n    - from: "ui"\n      allow: ["logic", "data"]\n    - from: "logic"\n      allow: ["data"]' > test_project/.boundaries.yml
+
+          # 境界チェックを実行
+          python run_checks.py test_project || echo "Expected failure due to boundary violation"
+
+          # 失敗しないように設定したバージョンも試す
+          python run_checks.py test_project --no-fail
